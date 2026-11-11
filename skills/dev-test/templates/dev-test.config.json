@@ -1,0 +1,18 @@
+{
+  "environments": {
+    "local": { "base_url": "http://localhost/your-app" },
+    "sit": { "base_url": "" }
+  },
+  "default_environment": "local",
+  "never_test_against": ["example-live-domain.com"],
+  "login": {
+    "path": "/login",
+    "username_env": "DEVTEST_USERNAME",
+    "password_env": "DEVTEST_PASSWORD"
+  },
+  "test_commands": [],
+  "static_checks": [],
+  "related_repos": [],
+  "skip_paths": ["vendor/", "node_modules/"],
+  "report_dir": "dev-test-reports"
+}

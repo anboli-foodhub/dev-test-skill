@@ -1,0 +1,117 @@
+{
+  "ticket": {
+    "key": "ABC-123",
+    "summary": "Allow store owners to set a minimum order value",
+    "url": "https://your-site.atlassian.net/browse/ABC-123"
+  },
+  "run": {
+    "repo": "your-repo",
+    "branch": "feature/ABC-123/min-order-value",
+    "base": "main",
+    "environment": "local",
+    "base_url": "http://localhost/your-app",
+    "tester": "dev@example.com",
+    "date": "2026-11-11"
+  },
+  "acceptance_criteria": [
+    { "id": "AC-1", "text": "Owner can save a minimum order value between 0 and 999.99" },
+    { "id": "AC-2", "text": "Checkout is blocked with a message when the basket is below the minimum" }
+  ],
+  "test_cases": [
+    {
+      "id": "TC-001",
+      "ac": ["AC-1"],
+      "category": "Happy path",
+      "priority": "P1",
+      "method": "UI",
+      "title": "Save a valid minimum order value",
+      "preconditions": "Logged in as store owner",
+      "test_data": "10.50",
+      "steps": ["Open Settings > Ordering", "Enter 10.50", "Click Save"],
+      "expected": "Saved message shown; value 10.50 shown after reload",
+      "actual": "Saved message shown; 10.50 after reload",
+      "status": "PASS",
+      "evidence": ["screenshots/TC-001-1.png"],
+      "notes": ""
+    },
+    {
+      "id": "TC-002",
+      "ac": ["AC-1"],
+      "category": "Corner case",
+      "priority": "P2",
+      "method": "UI",
+      "title": "Reject value above the limit",
+      "preconditions": "Logged in as store owner",
+      "test_data": "1000",
+      "steps": ["Open Settings > Ordering", "Enter 1000", "Click Save"],
+      "expected": "Validation error, value not saved",
+      "actual": "Value saved as 1000",
+      "status": "FAIL",
+      "evidence": ["screenshots/TC-002-1.png"],
+      "notes": ""
+    },
+    {
+      "id": "TC-003",
+      "ac": ["AC-2"],
+      "category": "Failure flow",
+      "priority": "P0",
+      "method": "UI",
+      "title": "Checkout blocked below the minimum",
+      "preconditions": "Store minimum 10.50; basket total 8.00",
+      "test_data": "1 x item at 8.00",
+      "steps": ["Add item to basket", "Go to checkout"],
+      "expected": "Message 'Minimum order is £10.50'; Pay button disabled",
+      "actual": "Message shown; Pay disabled",
+      "status": "PASS",
+      "evidence": ["screenshots/TC-003-1.png"],
+      "notes": ""
+    },
+    {
+      "id": "TC-004",
+      "ac": [],
+      "category": "Backward compatibility",
+      "priority": "P1",
+      "method": "API",
+      "title": "Stores without the new column set still check out",
+      "preconditions": "Store row created before the migration",
+      "test_data": "store 42",
+      "steps": "POST /api/checkout for store 42 with a 1-item basket",
+      "expected": "200, order created as before",
+      "actual": "",
+      "status": "BLOCKED",
+      "evidence": [],
+      "notes": "SIT checkout API down at time of run"
+    }
+  ],
+  "defects": [
+    {
+      "id": "DEF-1",
+      "tc": "TC-002",
+      "severity": "Major",
+      "title": "Minimum order value above 999.99 is accepted",
+      "steps": "See TC-002",
+      "expected": "Validation error",
+      "actual": "Saved as 1000",
+      "suspected_location": "settings/ordering.php:88 - no upper bound check"
+    }
+  ],
+  "compat_risks": [
+    {
+      "id": "BC-1",
+      "risk": "New column min_order_value is NOT NULL; old store rows rely on the default",
+      "tc": ["TC-004"],
+      "result": "BLOCKED"
+    }
+  ],
+  "automated_checks": [
+    {
+      "name": "Unit tests",
+      "command": "vendor/bin/phpunit",
+      "result": "PASS",
+      "details": "212 tests, 0 failures"
+    }
+  ],
+  "verdict": "READY WITH RISKS",
+  "verdict_reason": "One Major defect (DEF-1); BC-1 not verified because SIT checkout was down",
+  "test_data_created": ["store 42 setting min_order_value=10.50 (reset to 0 after run)"]
+}
